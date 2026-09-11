@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { buildAbReport } from "@/lib/ab-report";
@@ -54,7 +55,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
             <div className="timeline">
               {session.steps.map((step) => (
                 <div className="step subcard" key={step.id}>
-                  {step.screenshotUrl && <a href={step.screenshotUrl} target="_blank"><img src={step.screenshotUrl} alt={`Étape ${step.index}`} /></a>}
+                  {step.screenshotUrl && <a href={step.screenshotUrl} target="_blank"><Image unoptimized width={1280} height={800} src={step.screenshotUrl} alt={`Étape ${step.index}`} /></a>}
                   <strong>Étape {step.index}</strong>
                   <span>{step.observation}</span>
                   <span className="meta">{step.result}</span>

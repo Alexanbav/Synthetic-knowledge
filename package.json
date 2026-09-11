@@ -15,7 +15,11 @@
     "type": "git",
     "url": "git+https://github.com/Alexanbav/Synthetic-knowledge.git"
   },
-  "keywords": ["synthetic-users", "ab-testing", "ux"],
+  "keywords": [
+    "synthetic-users",
+    "ab-testing",
+    "ux"
+  ],
   "author": "",
   "license": "ISC",
   "bugs": {
@@ -37,9 +41,9 @@
     "@types/node": "^22.20.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "eslint": "^10.10.0",
+    "eslint": "^9.39.5",
     "eslint-config-next": "^16.3.4",
     "tailwindcss": "^4.3.3",
-    "typescript": "^7.0.2"
+    "typescript": "^6.0.3"
   }
 }
