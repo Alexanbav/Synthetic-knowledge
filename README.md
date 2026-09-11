@@ -17,9 +17,9 @@ Ouvrez `http://localhost:3000`, créez une étude et lancez ses sessions. Le bou
 
 ## Modèle LLM
 
-Ajoutez `OPENAI_API_KEY` dans `.env` pour activer la navigation multimodale. Sans
-clé, un agent déterministe est utilisé sur le prototype de démonstration, ce qui
-permet de vérifier tout le parcours localement.
+Ajoutez `ANTHROPIC_API_KEY` dans `.env` pour que Claude navigue les prototypes
+(vision). `OPENAI_API_KEY` reste un repli. Sans aucune clé, un agent déterministe
+est utilisé sur le prototype de démonstration.
 
 Les domaines peuvent être restreints via `SYNTHETIC_ALLOWED_DOMAINS`. Les
 sessions sont bornées à 25 étapes, n'autorisent que HTTP(S), et ne doivent pas

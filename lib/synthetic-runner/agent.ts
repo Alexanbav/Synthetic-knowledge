@@ -1,7 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 import { db } from "@/lib/db";
+import { parseAgentAction } from "./parse-action";
 import {
   closeBrowser,
   describePage,
@@ -48,30 +50,57 @@ async function demoDecision(pageText: string): Promise<AgentAction> {
   };
 }
 
-async function visionDecision(
-  screenshot: Buffer,
-  pageText: string,
-  input: RunInput,
-): Promise<AgentAction> {
-  if (!process.env.OPENAI_API_KEY) return demoDecision(pageText);
+const systemPrompt =
+  "Tu simules honnêtement un utilisateur UX. N'utilise ni DevTools ni connaissance cachée. Réponds uniquement en JSON avec thought, action (click|type|scroll|wait|done), selector, x, y, text, done, success, reason. N'annonce le succès que si le critère est visiblement atteint.";
+
+function userPrompt(input: RunInput, pageText: string) {
+  return `Persona: ${input.persona.name}. ${input.persona.brief}. Contraintes: ${input.persona.constraints ?? "aucune"}.\nTâche: ${input.task.title}.\nCritère: ${input.task.successCriteria}.\nAccès: ${input.accessHint ?? "aucune instruction"}.\nContenu visible: ${pageText}`;
+}
+
+async function claudeDecision(screenshot: Buffer, pageText: string, input: RunInput): Promise<AgentAction> {
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const response = await client.messages.create({
+    model: process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-5",
+    max_tokens: 800,
+    temperature: 0.2,
+    system: systemPrompt,
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "image",
+            source: {
+              type: "base64",
+              media_type: "image/png",
+              data: screenshot.toString("base64"),
+            },
+          },
+          { type: "text", text: userPrompt(input, pageText) },
+        ],
+      },
+    ],
+  });
+  const text = response.content
+    .filter((block) => block.type === "text")
+    .map((block) => block.text)
+    .join("\n");
+  if (!text) throw new Error("Claude n'a renvoyé aucune action.");
+  return parseAgentAction(text);
+}
+
+async function openaiDecision(screenshot: Buffer, pageText: string, input: RunInput): Promise<AgentAction> {
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const response = await client.chat.completions.create({
     model: process.env.OPENAI_MODEL ?? "gpt-4o",
     response_format: { type: "json_object" },
     temperature: 0.2,
     messages: [
-      {
-        role: "system",
-        content:
-          "Tu simules honnêtement un utilisateur UX. N'utilise ni DevTools ni connaissance cachée. Réponds uniquement en JSON avec thought, action (click|type|scroll|wait|done), selector, x, y, text, done, success, reason. N'annonce le succès que si le critère est visiblement atteint.",
-      },
+      { role: "system", content: systemPrompt },
       {
         role: "user",
         content: [
-          {
-            type: "text",
-            text: `Persona: ${input.persona.name}. ${input.persona.brief}. Contraintes: ${input.persona.constraints ?? "aucune"}.\nTâche: ${input.task.title}.\nCritère: ${input.task.successCriteria}.\nAccès: ${input.accessHint ?? "aucune instruction"}.\nContenu visible: ${pageText}`,
-          },
+          { type: "text", text: userPrompt(input, pageText) },
           {
             type: "image_url",
             image_url: { url: `data:image/png;base64,${screenshot.toString("base64")}` },
@@ -82,7 +111,17 @@ async function visionDecision(
   });
   const content = response.choices[0]?.message.content;
   if (!content) throw new Error("Le modèle n'a renvoyé aucune action.");
-  return JSON.parse(content) as AgentAction;
+  return parseAgentAction(content);
+}
+
+async function visionDecision(
+  screenshot: Buffer,
+  pageText: string,
+  input: RunInput,
+): Promise<AgentAction> {
+  if (process.env.ANTHROPIC_API_KEY) return claudeDecision(screenshot, pageText, input);
+  if (process.env.OPENAI_API_KEY) return openaiDecision(screenshot, pageText, input);
+  return demoDecision(pageText);
 }
 
 export async function runSyntheticSession(input: RunInput) {
