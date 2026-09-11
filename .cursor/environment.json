@@ -1,0 +1,17 @@
+{
+  "name": "Synthetic Knowledge",
+  "install": "npm ci && npx playwright install --with-deps chromium && ([ -f .env ] || cp .env.example .env) && npx prisma generate && npx prisma db push",
+  "terminals": [
+    {
+      "name": "next-dev",
+      "command": "npm run dev",
+      "description": "Next.js dev server on http://localhost:3000"
+    }
+  ],
+  "ports": [
+    {
+      "name": "web",
+      "port": 3000
+    }
+  ]
+}
