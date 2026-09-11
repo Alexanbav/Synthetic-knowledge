@@ -1,0 +1,73 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { db } from "@/lib/db";
+import { buildAbReport } from "@/lib/ab-report";
+
+export const dynamic = "force-dynamic";
+
+export default async function ReportPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const study = await db.study.findUnique({
+    where: { id },
+    include: {
+      sessions: {
+        include: { persona: true, task: true, steps: { orderBy: { index: "asc" } } },
+        orderBy: [{ variant: "asc" }, { createdAt: "asc" }],
+      },
+    },
+  });
+  if (!study) notFound();
+  const report = buildAbReport(study.sessions);
+  return (
+    <div style={{ paddingBottom: 72 }}>
+      <section className="hero">
+        <div>
+          <div className="eyebrow">Rapport synthétique</div>
+          <h1>{study.name}</h1>
+          <p className="lead">
+            {report.winner ? `La variante ${report.winner} prend l’avantage dans cet échantillon.` : "Aucun gagnant net ne se dégage pour le moment."}
+          </p>
+        </div>
+        <Link className="button secondary" href={`/studies/${study.id}`}>← Retour à l’étude</Link>
+      </section>
+      <section className="grid report-grid">
+        {report.variants.map((variant) => (
+          <article className="card" key={variant.variant}>
+            <div className="row"><h2>Variante {variant.variant}</h2>{report.winner === variant.variant && <span className="pill">Gagnant suggéré</span>}</div>
+            <div className="metric">{variant.rate}%</div>
+            <p>de réussite · {variant.successes}/{variant.completed} sessions terminées</p>
+            <div className="meta">{variant.averageSteps} étapes en moyenne</div>
+            {variant.frictions.length > 0 && <><h3 style={{ marginTop: 22 }}>Frictions</h3><ul>{variant.frictions.slice(0, 5).map((item, i) => <li key={i}>{item}</li>)}</ul></>}
+          </article>
+        ))}
+      </section>
+      {!study.sessions.length && <div className="empty section">Lancez les sessions depuis l’étude pour générer ce rapport.</div>}
+      <section className="section grid">
+        <div><div className="eyebrow">Preuves de navigation</div><h2>Rejouer les sessions</h2></div>
+        {study.sessions.map((session) => (
+          <article className="card grid" key={session.id}>
+            <div className="row">
+              <div><span className="pill">Variante {session.variant}</span><h3 style={{ marginTop: 10 }}>{session.persona.name} · {session.task.title}</h3></div>
+              <strong>{session.success ? "Objectif atteint" : session.status === "FAILED" ? "Erreur technique" : "Objectif non atteint"}</strong>
+            </div>
+            <p>{session.summary}</p>
+            <div className="timeline">
+              {session.steps.map((step) => (
+                <div className="step subcard" key={step.id}>
+                  {step.screenshotUrl && <a href={step.screenshotUrl} target="_blank"><img src={step.screenshotUrl} alt={`Étape ${step.index}`} /></a>}
+                  <strong>Étape {step.index}</strong>
+                  <span>{step.observation}</span>
+                  <span className="meta">{step.result}</span>
+                </div>
+              ))}
+            </div>
+          </article>
+        ))}
+      </section>
+      <aside className="card">
+        <strong>À interpréter avec prudence.</strong>
+        <p>Un petit échantillon d’utilisateurs synthétiques révèle des hypothèses et des frictions, mais ne remplace ni des entretiens réels ni une expérimentation statistiquement significative.</p>
+      </aside>
+    </div>
+  );
+}

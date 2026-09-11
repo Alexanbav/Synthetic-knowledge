@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Study {
+  id          String    @id @default(cuid())
+  name        String
+  hypothesis  String
+  urlA        String
+  urlB        String?
+  accessHint  String?
+  status      String    @default("DRAFT")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  personas    Persona[]
+  tasks       Task[]
+  sessions    Session[]
+}
+
+model Persona {
+  id          String    @id @default(cuid())
+  name        String
+  brief       String
+  constraints String?
+  studyId     String
+  study       Study     @relation(fields: [studyId], references: [id], onDelete: Cascade)
+  sessions    Session[]
+}
+
+model Task {
+  id              String    @id @default(cuid())
+  title           String
+  successCriteria String
+  maxSteps        Int       @default(15)
+  studyId         String
+  study           Study     @relation(fields: [studyId], references: [id], onDelete: Cascade)
+  sessions        Session[]
+}
+
+model Session {
+  id        String    @id @default(cuid())
+  variant   String
+  status    String    @default("PENDING")
+  success   Boolean?
+  stepCount Int       @default(0)
+  summary   String?
+  friction  String?
+  studyId   String
+  personaId String
+  taskId    String
+  createdAt DateTime  @default(now())
+  study     Study     @relation(fields: [studyId], references: [id], onDelete: Cascade)
+  persona   Persona   @relation(fields: [personaId], references: [id], onDelete: Cascade)
+  task      Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  steps     Step[]
+}
+
+model Step {
+  id            String   @id @default(cuid())
+  index         Int
+  screenshotUrl String?
+  observation   String
+  actionJson    String
+  result        String
+  sessionId     String
+  createdAt     DateTime @default(now())
+  session       Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}

@@ -1,0 +1,45 @@
+{
+  "name": "synthetic-knowledge",
+  "version": "1.0.0",
+  "description": "Tests utilisateurs synthétiques et A/B sur prototypes",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "test": "node --test --experimental-strip-types tests/*.test.ts",
+    "db:push": "prisma db push"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Alexanbav/Synthetic-knowledge.git"
+  },
+  "keywords": ["synthetic-users", "ab-testing", "ux"],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Alexanbav/Synthetic-knowledge/issues"
+  },
+  "homepage": "https://github.com/Alexanbav/Synthetic-knowledge#readme",
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "next": "^16.3.4",
+    "openai": "^7.15.0",
+    "playwright": "^1.63.0",
+    "prisma": "^6.19.3",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "zod": "^4.6.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^22.20.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "eslint": "^10.10.0",
+    "eslint-config-next": "^16.3.4",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2"
+  }
+}
