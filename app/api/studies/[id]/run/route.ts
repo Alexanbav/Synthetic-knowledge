@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { runSyntheticSession } from "@/lib/synthetic-runner/agent";
+import { runStaticReview } from "@/lib/static-review/runner";
 
 export const maxDuration = 300;
 
@@ -11,11 +12,26 @@ export async function POST(
   const { id } = await context.params;
   const study = await db.study.findUnique({
     where: { id },
-    include: { personas: true, tasks: true },
+    include: { personas: true, tasks: true, screens: true },
   });
   if (!study) return NextResponse.json({ error: "Étude introuvable" }, { status: 404 });
   if (study.status === "RUNNING") {
     return NextResponse.json({ error: "Une exécution est déjà en cours" }, { status: 409 });
+  }
+
+  if (study.mode === "STATIC") {
+    if (!study.screens.length) {
+      return NextResponse.json(
+        { error: "Ajoutez au moins un écran (PDF ou images) avant de lancer la revue." },
+        { status: 400 },
+      );
+    }
+    await runStaticReview(id);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (!study.urlA) {
+    return NextResponse.json({ error: "Aucune URL de prototype définie." }, { status: 400 });
   }
 
   await db.step.deleteMany({ where: { session: { studyId: id } } });

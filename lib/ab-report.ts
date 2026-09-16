@@ -36,3 +36,30 @@ export function buildAbReport(sessions: ReportSession[]) {
       : null;
   return { variants, winner };
 }
+
+type StaticReportSession = {
+  variant: string;
+  status: string;
+  stepCount: number;
+  friction: string | null;
+};
+
+export function buildStaticReport(sessions: StaticReportSession[]) {
+  const variants = ["A", "B"]
+    .filter((variant) => sessions.some((session) => session.variant === variant))
+    .map((variant) => {
+      const variantSessions = sessions.filter((session) => session.variant === variant);
+      const completed = variantSessions.filter((session) => session.status === "COMPLETED");
+      const frictions = Array.from(
+        new Set(completed.flatMap((session) => session.friction?.split("\n").filter(Boolean) ?? [])),
+      );
+      const screens = completed.reduce((max, session) => Math.max(max, session.stepCount), 0);
+      return {
+        variant,
+        reviews: variantSessions.length,
+        screens,
+        frictions,
+      };
+    });
+  return { variants };
+}
