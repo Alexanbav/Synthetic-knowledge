@@ -11,7 +11,8 @@ model Study {
   id          String    @id @default(cuid())
   name        String
   hypothesis  String
-  urlA        String
+  mode        String    @default("INTERACTIVE")
+  urlA        String?
   urlB        String?
   accessHint  String?
   status      String    @default("DRAFT")
@@ -20,6 +21,18 @@ model Study {
   personas    Persona[]
   tasks       Task[]
   sessions    Session[]
+  screens     Screen[]
+}
+
+model Screen {
+  id        String   @id @default(cuid())
+  variant   String
+  index     Int
+  imageUrl  String
+  label     String?
+  studyId   String
+  createdAt DateTime @default(now())
+  study     Study    @relation(fields: [studyId], references: [id], onDelete: Cascade)
 }
 
 model Persona {

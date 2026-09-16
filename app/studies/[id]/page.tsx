@@ -12,18 +12,39 @@ export default async function StudyPage({ params }: { params: Promise<{ id: stri
     include: {
       personas: true,
       tasks: true,
+      screens: { orderBy: [{ variant: "asc" }, { index: "asc" }] },
       sessions: { include: { persona: true, task: true }, orderBy: { createdAt: "asc" } },
     },
   });
   if (!study) notFound();
+  const isStatic = study.mode === "STATIC";
+  const hostname = (value: string | null) => {
+    if (!value) return null;
+    try {
+      return new URL(value).hostname;
+    } catch {
+      return value;
+    }
+  };
+  const screensByVariant = ["A", "B"].map((variant) => ({
+    variant,
+    count: study.screens.filter((screen) => screen.variant === variant).length,
+  })).filter((entry) => entry.count > 0);
   return (
     <div style={{ paddingBottom: 70 }}>
       <section className="hero">
         <div>
-          <div className="eyebrow">{study.urlB ? "Expérience A/B" : "Test synthétique"}</div>
+          <div className="eyebrow">{isStatic ? "Revue heuristique statique" : study.urlB ? "Expérience A/B" : "Test synthétique"}</div>
           <h1>{study.name}</h1>
           <p className="lead">{study.hypothesis}</p>
-          <div className="meta"><span className="pill">A · {new URL(study.urlA).hostname}</span>{study.urlB && <span className="pill">B · {new URL(study.urlB).hostname}</span>}</div>
+          <div className="meta">
+            {isStatic
+              ? screensByVariant.map((entry) => <span className="pill" key={entry.variant}>{entry.variant} · {entry.count} écran(s)</span>)
+              : <>
+                  <span className="pill">A · {hostname(study.urlA)}</span>
+                  {study.urlB && <span className="pill">B · {hostname(study.urlB)}</span>}
+                </>}
+          </div>
         </div>
         <div className="grid">
           <RunStudyButton studyId={study.id} />

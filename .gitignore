@@ -4,6 +4,7 @@ node_modules
 prisma/dev.db
 prisma/dev.db-journal
 public/runs
+public/uploads
 playwright-report
 test-results
 *.tsbuildinfo
